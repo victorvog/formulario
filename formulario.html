@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário Dinâmico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .required-field::after {
+            content: " *";
+            color: #ef4444;
+        }
+        
+        .section-header {
+            position: relative;
+        }
+        
+        .section-header::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -8px;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(59,130,246,0.5) 0%, rgba(59,130,246,0.1) 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <!-- Header -->
+            <div class="bg-blue-600 px-6 py-4">
+                <h1 class="text-2xl font-bold text-white">
+                    <i class="fas fa-file-alt mr-2"></i> Formulário de Cadastro
+                </h1>
+                <p class="text-blue-100 mt-1">Preencha os campos abaixo conforme necessário</p>
+            </div>
+            
+            <!-- Form -->
+            <form class="p-6 space-y-6" id="mainForm">
+                <!-- Common Fields Section -->
+                <div class="space-y-4">
+                    <h2 class="text-xl font-semibold text-gray-800 section-header pb-2">
+                        <i class="fas fa-list-check mr-2 text-blue-500"></i> Campos Comuns
+                    </h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Nome -->
+                        <div>
+                            <label for="nome" class="block text-sm font-medium text-gray-700 required-field">Nome</label>
+                            <input type="text" id="nome" name="nome" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        
+                        <!-- Tipo -->
+                        <div>
+                            <label for="tipo" class="block text-sm font-medium text-gray-700 required-field">Tipo</label>
+                            <select id="tipo" name="tipo" required
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <option value="">Selecione uma opção</option>
+                                <option value="projeto">Projeto</option>
+                                <option value="evento">Evento</option>
+                                <option value="monitoria">Monitoria</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Descrição -->
+                    <div>
+                        <label for="descricao" class="block text-sm font-medium text-gray-700 required-field">Descrição</label>
+                        <textarea id="descricao" name="descricao" rows="3" required
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                    </div>
+                    
+                    <!-- Data Início e Data Fim -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="data_inicio" class="block text-sm font-medium text-gray-700 required-field">Data de Início</label>
+                            <input type="date" id="data_inicio" name="data_inicio" required
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="data_fim" class="block text-sm font-medium text-gray-700">Data de Término</label>
+                            <input type="date" id="data_fim" name="data_fim"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        </div>
+                    </div>
+                    
+                    <!-- Responsável -->
+                    <div>
+                        <label for="responsavel" class="block text-sm font-medium text-gray-700 required-field">Responsável</label>
+                        <input type="text" id="responsavel" name="responsavel" required
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    </div>
+                </div>
+                
+                <!-- Dynamic Fields Section -->
+                <div id="dynamicFields" class="space-y-6">
+                    <!-- Fields will be loaded here based on selection -->
+                    <div class="text-center py-8 text-gray-400">
+                        <i class="fas fa-arrow-down text-2xl mb-2"></i>
+                        <p>Selecione um tipo acima para exibir campos específicos</p>
+                    </div>
+                </div>
+                
+                <!-- Submit Button -->
+                <div class="pt-4">
+                    <button type="submit" class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-md shadow-sm transition duration-150 ease-in-out">
+                        <i class="fas fa-save mr-2"></i> Salvar Cadastro
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tipoSelect = document.getElementById('tipo');
+            const dynamicFields = document.getElementById('dynamicFields');
+            
+            tipoSelect.addEventListener('change', function() {
+                const selectedValue = this.value;
+                
+                // Clear previous dynamic fields
+                dynamicFields.innerHTML = '';
+                
+                if (selectedValue === 'projeto') {
+                    loadProjetoFields();
+                } else if (selectedValue === 'evento') {
+                    loadEventoFields();
+                } else if (selectedValue === 'monitoria') {
+                    loadMonitoriaFields();
+                }
+            });
+            
+            function loadProjetoFields() {
+                const html = `
+                    <div class="fade-in">
+                        <h2 class="text-xl font-semibold text-gray-800 section-header pb-2">
+                            <i class="fas fa-project-diagram mr-2 text-blue-500"></i> Detalhes do Projeto
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <!-- Áreas Temáticas Secundárias -->
+                            <div>
+                                <label for="areas_tematicas" class="block text-sm font-medium text-gray-700">Áreas Temáticas Secundárias</label>
+                                <input type="text" id="areas_tematicas" name="areas_tematicas"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Linha de Extensão -->
+                            <div>
+                                <label for="linha_extensao" class="block text-sm font-medium text-gray-700 required-field">Linha de Extensão</label>
+                                <select id="linha_extensao" name="linha_extensao" required
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option value="">Selecione uma opção</option>
+                                    <option value="educacao">Educação</option>
+                                    <option value="saude">Saúde</option>
+                                    <option value="cultura">Cultura</option>
+                                    <option value="meio_ambiente">Meio Ambiente</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Justificativa -->
+                            <div>
+                                <label for="justificativa" class="block text-sm font-medium text-gray-700 required-field">Justificativa</label>
+                                <textarea id="justificativa" name="justificativa" rows="3" required
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Objetivo Geral -->
+                            <div>
+                                <label for="objetivo_geral" class="block text-sm font-medium text-gray-700 required-field">Objetivo Geral</label>
+                                <textarea id="objetivo_geral" name="objetivo_geral" rows="2" required
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Objetivos Específicos -->
+                            <div>
+                                <label for="objetivos_especificos" class="block text-sm font-medium text-gray-700 required-field">Objetivos Específicos</label>
+                                <textarea id="objetivos_especificos" name="objetivos_especificos" rows="3" required
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Público-Alvo -->
+                            <div>
+                                <label for="publico_alvo" class="block text-sm font-medium text-gray-700 required-field">Público-Alvo</label>
+                                <textarea id="publico_alvo" name="publico_alvo" rows="2" required
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Número Estimado de Beneficiários -->
+                            <div>
+                                <label for="numero_beneficiarios" class="block text-sm font-medium text-gray-700">Número Estimado de Beneficiários</label>
+                                <input type="number" id="numero_beneficiarios" name="numero_beneficiarios" min="0"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Membros da Equipe -->
+                            <div>
+                                <label for="membros_equipe" class="block text-sm font-medium text-gray-700">Membros da Equipe</label>
+                                <textarea id="membros_equipe" name="membros_equipe" rows="3"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                <p class="mt-1 text-sm text-gray-500">Liste os membros da equipe separados por vírgula</p>
+                            </div>
+                            
+                            <!-- Parceiros Envolvidos -->
+                            <div>
+                                <label for="parceiros" class="block text-sm font-medium text-gray-700">Parceiros Envolvidos</label>
+                                <textarea id="parceiros" name="parceiros" rows="2"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Edital de Financiamento -->
+                            <div>
+                                <label for="edital_financiamento" class="block text-sm font-medium text-gray-700">Edital de Financiamento</label>
+                                <input type="text" id="edital_financiamento" name="edital_financiamento"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Número do Processo Institucional -->
+                            <div>
+                                <label for="numero_processo" class="block text-sm font-medium text-gray-700">Número do Processo Institucional</label>
+                                <input type="text" id="numero_processo" name="numero_processo"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Centro/Departamento Proponente -->
+                            <div>
+                                <label for="centro_proponente" class="block text-sm font-medium text-gray-700 required-field">Centro/Departamento Proponente</label>
+                                <input type="text" id="centro_proponente" name="centro_proponente" required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Status de Aprovação -->
+                            <div>
+                                <label for="status_aprovacao" class="block text-sm font-medium text-gray-700">Status de Aprovação</label>
+                                <select id="status_aprovacao" name="status_aprovacao"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option value="">Selecione uma opção</option>
+                                    <option value="pendente">Pendente</option>
+                                    <option value="aprovado">Aprovado</option>
+                                    <option value="reprovado">Reprovado</option>
+                                    <option value="em_analise">Em Análise</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Forma de Avaliação -->
+                            <div>
+                                <label for="forma_avaliacao" class="block text-sm font-medium text-gray-700">Forma de Avaliação</label>
+                                <textarea id="forma_avaliacao" name="forma_avaliacao" rows="2"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Indicadores de Avaliação -->
+                            <div>
+                                <label for="indicadores_avaliacao" class="block text-sm font-medium text-gray-700">Indicadores de Avaliação</label>
+                                <textarea id="indicadores_avaliacao" name="indicadores_avaliacao" rows="2"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Orçamento Section -->
+                            <div class="pt-4">
+                                <h2 class="text-xl font-semibold text-gray-800 section-header pb-2">
+                                    <i class="fas fa-money-bill-wave mr-2 text-blue-500"></i> Orçamento
+                                </h2>
+                                
+                                <div class="space-y-4 mt-4">
+                                    <!-- Valor Total Estimado -->
+                                    <div>
+                                        <label for="valor_total" class="block text-sm font-medium text-gray-700 required-field">Valor Total Estimado (R$)</label>
+                                        <input type="number" id="valor_total" name="valor_total" step="0.01" min="0" required
+                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    </div>
+                                    
+                                    <!-- Detalhes do Orçamento -->
+                                    <div>
+                                        <label for="detalhes_orcamento" class="block text-sm font-medium text-gray-700">Detalhes do Orçamento</label>
+                                        <textarea id="detalhes_orcamento" name="detalhes_orcamento" rows="3"
+                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                    </div>
+                                    
+                                    <!-- Anexar Orçamentos -->
+                                    <div>
+                                        <label for="anexo_orcamento" class="block text-sm font-medium text-gray-700 required-field">Anexar Orçamentos</label>
+                                        <input type="file" id="anexo_orcamento" name="anexo_orcamento" required
+                                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    </div>
+                                    
+                                    <!-- Status da Solicitação de Orçamento -->
+                                    <div>
+                                        <label for="status_orcamento" class="block text-sm font-medium text-gray-700">Status da Solicitação de Orçamento</label>
+                                        <select id="status_orcamento" name="status_orcamento"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                            <option value="">Selecione uma opção</option>
+                                            <option value="pendente">Pendente</option>
+                                            <option value="aprovado">Aprovado</option>
+                                            <option value="reprovado">Reprovado</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Data da Solicitação de Orçamento -->
+                                    <div>
+                                        <label for="data_solicitacao_orcamento" class="block text-sm font-medium text-gray-700">Data da Solicitação de Orçamento</label>
+                                        <input type="date" id="data_solicitacao_orcamento" name="data_solicitacao_orcamento" readonly
+                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 sm:text-sm">
+                                    </div>
+                                    
+                                    <!-- Informações Adicionais sobre o Orçamento -->
+                                    <div>
+                                        <label for="info_adicional_orcamento" class="block text-sm font-medium text-gray-700">Informações Adicionais sobre o Orçamento</label>
+                                        <textarea id="info_adicional_orcamento" name="info_adicional_orcamento" rows="2"
+                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                dynamicFields.innerHTML = html;
+                document.getElementById('data_solicitacao_orcamento').valueAsDate = new Date();
+            }
+            
+            function loadEventoFields() {
+                const html = `
+                    <div class="fade-in">
+                        <h2 class="text-xl font-semibold text-gray-800 section-header pb-2">
+                            <i class="fas fa-calendar-alt mr-2 text-blue-500"></i> Detalhes do Evento
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <!-- Tipo de Evento -->
+                            <div>
+                                <label for="tipo_evento" class="block text-sm font-medium text-gray-700 required-field">Tipo de Evento</label>
+                                <select id="tipo_evento" name="tipo_evento" required
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option value="">Selecione uma opção</option>
+                                    <option value="palestra">Palestra</option>
+                                    <option value="workshop">Workshop</option>
+                                    <option value="seminario">Seminário</option>
+                                    <option value="congresso">Congresso</option>
+                                    <option value="feira">Feira</option>
+                                    <option value="exposicao">Exposição</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Público-Alvo Específico -->
+                            <div>
+                                <label for="publico_especifico" class="block text-sm font-medium text-gray-700">Público-Alvo Específico</label>
+                                <input type="text" id="publico_especifico" name="publico_especifico"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Número Estimado de Participantes -->
+                            <div>
+                                <label for="numero_participantes" class="block text-sm font-medium text-gray-700">Número Estimado de Participantes</label>
+                                <input type="number" id="numero_participantes" name="numero_participantes" min="0"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Organizador(es) -->
+                            <div>
+                                <label for="organizadores" class="block text-sm font-medium text-gray-700">Organizador(es)</label>
+                                <textarea id="organizadores" name="organizadores" rows="2"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Palestrantes/Facilitadores -->
+                            <div>
+                                <label for="palestrantes" class="block text-sm font-medium text-gray-700">Palestrantes/Facilitadores</label>
+                                <textarea id="palestrantes" name="palestrantes" rows="3"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Material de Divulgação -->
+                            <div>
+                                <label for="material_divulgacao" class="block text-sm font-medium text-gray-700">Material de Divulgação</label>
+                                <input type="file" id="material_divulgacao" name="material_divulgacao"
+                                       class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            </div>
+                            
+                            <!-- Taxa de Inscrição -->
+                            <div>
+                                <label for="taxa_inscricao" class="block text-sm font-medium text-gray-700">Taxa de Inscrição (R$)</label>
+                                <input type="number" id="taxa_inscricao" name="taxa_inscricao" step="0.01" min="0"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Vagas -->
+                            <div>
+                                <label for="vagas" class="block text-sm font-medium text-gray-700">Vagas</label>
+                                <input type="number" id="vagas" name="vagas" min="0"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Necessidade de Credenciamento -->
+                            <div>
+                                <label for="credenciamento" class="block text-sm font-medium text-gray-700">Necessidade de Credenciamento</label>
+                                <select id="credenciamento" name="credenciamento"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option value="">Selecione uma opção</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Emissão de Certificados -->
+                            <div>
+                                <label for="emissao_certificados" class="block text-sm font-medium text-gray-700">Emissão de Certificados</label>
+                                <select id="emissao_certificados" name="emissao_certificados"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option value="">Selecione uma opção</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Carga Horária do Certificado -->
+                            <div>
+                                <label for="carga_horaria_certificado" class="block text-sm font-medium text-gray-700">Carga Horária do Certificado</label>
+                                <input type="number" id="carga_horaria_certificado" name="carga_horaria_certificado" min="0"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <p class="mt-1 text-sm text-gray-500">Horas</p>
+                            </div>
+                            
+                            <!-- Projeto Vinculado -->
+                            <div>
+                                <label for="projeto_vinculado" class="block text-sm font-medium text-gray-700">Projeto Vinculado</label>
+                                <input type="text" id="projeto_vinculado" name="projeto_vinculado"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Orçamento Section -->
+                            <div class="pt-4">
+                                <h2 class="text-xl font-semibold text-gray-800 section-header pb-2">
+                                    <i class="fas fa-money-bill-wave mr-2 text-blue-500"></i> Orçamento
+                                </h2>
+                                
+                                <div class="space-y-4 mt-4">
+                                    <!-- Valor Total Estimado -->
+                                    <div>
+                                        <label for="valor_total" class="block text-sm font-medium text-gray-700 required-field">Valor Total Estimado (R$)</label>
+                                        <input type="number" id="valor_total" name="valor_total" step="0.01" min="0" required
+                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    </div>
+                                    
+                                    <!-- Detalhes do Orçamento -->
+                                    <div>
+                                        <label for="detalhes_orcamento" class="block text-sm font-medium text-gray-700">Detalhes do Orçamento</label>
+                                        <textarea id="detalhes_orcamento" name="detalhes_orcamento" rows="3"
+                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                    </div>
+                                    
+                                    <!-- Anexar Orçamentos -->
+                                    <div>
+                                        <label for="anexo_orcamento" class="block text-sm font-medium text-gray-700 required-field">Anexar Orçamentos</label>
+                                        <input type="file" id="anexo_orcamento" name="anexo_orcamento" required
+                                               class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                    </div>
+                                    
+                                    <!-- Status da Solicitação de Orçamento -->
+                                    <div>
+                                        <label for="status_orcamento" class="block text-sm font-medium text-gray-700">Status da Solicitação de Orçamento</label>
+                                        <select id="status_orcamento" name="status_orcamento"
+                                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                            <option value="">Selecione uma opção</option>
+                                            <option value="pendente">Pendente</option>
+                                            <option value="aprovado">Aprovado</option>
+                                            <option value="reprovado">Reprovado</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <!-- Data da Solicitação de Orçamento -->
+                                    <div>
+                                        <label for="data_solicitacao_orcamento" class="block text-sm font-medium text-gray-700">Data da Solicitação de Orçamento</label>
+                                        <input type="date" id="data_solicitacao_orcamento" name="data_solicitacao_orcamento" readonly
+                                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100 sm:text-sm">
+                                    </div>
+                                    
+                                    <!-- Informações Adicionais sobre o Orçamento -->
+                                    <div>
+                                        <label for="info_adicional_orcamento" class="block text-sm font-medium text-gray-700">Informações Adicionais sobre o Orçamento</label>
+                                        <textarea id="info_adicional_orcamento" name="info_adicional_orcamento" rows="2"
+                                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                dynamicFields.innerHTML = html;
+                document.getElementById('data_solicitacao_orcamento').valueAsDate = new Date();
+            }
+            
+            function loadMonitoriaFields() {
+                const html = `
+                    <div class="fade-in">
+                        <h2 class="text-xl font-semibold text-gray-800 section-header pb-2">
+                            <i class="fas fa-user-graduate mr-2 text-blue-500"></i> Detalhes da Monitoria
+                        </h2>
+                        
+                        <div class="space-y-4">
+                            <!-- Projeto Vinculado -->
+                            <div>
+                                <label for="projeto_vinculado" class="block text-sm font-medium text-gray-700 required-field">Projeto Vinculado</label>
+                                <input type="text" id="projeto_vinculado" name="projeto_vinculado" required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Aluno Monitor -->
+                            <div>
+                                <label for="aluno_monitor" class="block text-sm font-medium text-gray-700 required-field">Aluno Monitor</label>
+                                <input type="text" id="aluno_monitor" name="aluno_monitor" required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Professor Orientador -->
+                            <div>
+                                <label for="professor_orientador" class="block text-sm font-medium text-gray-700 required-field">Professor Orientador</label>
+                                <input type="text" id="professor_orientador" name="professor_orientador" required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Carga Horária Semanal -->
+                            <div>
+                                <label for="carga_horaria_semanal" class="block text-sm font-medium text-gray-700 required-field">Carga Horária Semanal</label>
+                                <input type="number" id="carga_horaria_semanal" name="carga_horaria_semanal" min="1" required
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                <p class="mt-1 text-sm text-gray-500">Horas por semana</p>
+                            </div>
+                            
+                            <!-- Plano de Trabalho -->
+                            <div>
+                                <label for="plano_trabalho" class="block text-sm font-medium text-gray-700">Plano de Trabalho</label>
+                                <textarea id="plano_trabalho" name="plano_trabalho" rows="4"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Bolsa -->
+                            <div>
+                                <label for="bolsa" class="block text-sm font-medium text-gray-700">Bolsa</label>
+                                <select id="bolsa" name="bolsa"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <option value="">Selecione uma opção</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Número da Bolsa -->
+                            <div>
+                                <label for="numero_bolsa" class="block text-sm font-medium text-gray-700">Número da Bolsa</label>
+                                <input type="text" id="numero_bolsa" name="numero_bolsa"
+                                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+                            
+                            <!-- Requisitos para a Monitoria -->
+                            <div>
+                                <label for="requisitos_monitoria" class="block text-sm font-medium text-gray-700">Requisitos para a Monitoria</label>
+                                <textarea id="requisitos_monitoria" name="requisitos_monitoria" rows="3"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                            
+                            <!-- Processo Seletivo -->
+                            <div>
+                                <label for="processo_seletivo" class="block text-sm font-medium text-gray-700">Processo Seletivo</label>
+                                <textarea id="processo_seletivo" name="processo_seletivo" rows="3"
+                                          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                dynamicFields.innerHTML = html;
+            }
+            
+            // Form submission
+            document.getElementById('mainForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Here you would normally send the form data to the server
+                alert('Formulário enviado com sucesso!');
+                
+                // For demo purposes, we'll just log the form data
+                const formData = new FormData(this);
+                const data = {};
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+                console.log('Form data:', data);
+            });
+        });
+    </script>
+</body>
+</html>
